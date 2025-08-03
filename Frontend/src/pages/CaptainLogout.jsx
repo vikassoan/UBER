@@ -1,25 +1,39 @@
-import React from 'react'
-import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../utils/api';
 
-const UserLogout = () => {
-    const token = localStorage.getItem('token');
+const CaptainLogout = () => {
     const navigate = useNavigate();
 
-    axios.get(`${import.meta.env.VITE_BACKEND_URL}/captains/logout`, {
-        headers: {
-            Authorization: `Bearer ${token}`
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/');
+            return;
         }
-    }).then((response) => {
-        if (response.status === 200) {
-            localStorage.removeItem('token');
-            navigate('/captain-login');
-        }
-    })
 
-  return (
-    <div>CaptainLogout</div>
-  )
-}
+        const logout = async () => {
+            try {
+                await api.get('/captains/logout');
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                localStorage.removeItem('token');
+                navigate('/');
+            }
+        };
 
-export default UserLogout;
+        logout();
+    }, [navigate]);
+
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+                <h2 className="text-xl font-semibold mb-2">Logging out...</h2>
+                <p className="text-gray-600">Please wait while we sign you out.</p>
+            </div>
+        </div>
+    );
+};
+
+export default CaptainLogout;

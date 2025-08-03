@@ -1,11 +1,18 @@
 import React from "react";
 
 const ConfirmRide = (props) => {
+  // Helper function to safely get string value
+  const getStringValue = (value) => {
+    if (typeof value === 'string') return value;
+    if (value && typeof value === 'object' && value.description) return value.description;
+    return value || '';
+  };
+
   return (
     <div>
       <h5
         onClick={() => {
-          props.setConfirmRidePanel(false);
+          props.setConfirmRidePanel(false)
         }}
         className="p-3 text-center absolute top-0 w-[93%]"
       >
@@ -20,36 +27,40 @@ const ConfirmRide = (props) => {
         />
         <div className="w-full flex flex-col items-center border-t-1">
           <div className="flex w-full items-center border-b-1">
-            <i className="text-2xl font-semibold ri-map-pin-range-fill"></i>
+            <i className="text-2xl font-semibold ri-map-pin-line"></i>
             <div className="p-4">
                 <h4 className="text-xl font-semibold">
-                    562/A1
+                    Pickup
                 </h4>
-                <p className="text-sm text-gray-500">Kankariya Talab, Bhopal</p>
+                <p className="text-sm text-gray-500">{getStringValue(props.pickup)}</p>
             </div>
           </div>
 
           <div className="flex w-full items-center border-b-1">
-            <i className="text-2xl font-semibold ri-square-fill"></i>
+            <i className="text-2xl font-semibold ri-square-line"></i>
             <div className="p-4">
                 <h4 className="text-xl font-semibold">
-                    562/A1
+                    Destination
                 </h4>
-                <p className="text-sm text-gray-500">Kankariya Talab, Bhopal</p>
+                <p className="text-sm text-gray-500">{getStringValue(props.destination)}</p>
             </div>
           </div>
 
           <div className="flex w-full items-center border-b-1">
-            <i className="text-2xl font-semibold ri-bank-card-2-fill"></i>
+            <i className="text-2xl font-semibold ri-bank-card-line"></i>
             <div className="p-4">
                 <h4 className="text-xl font-semibold">
-                    ₹193.20
+                    ₹{props.fare[props.vehicleType] || 0}
                 </h4>
                 <p className="text-sm text-gray-500">Cash</p>
             </div>
           </div>
         </div>
-        <button onClick={() => {props.setVehicleFound(true); props.setConfirmRidePanel(false)}} className="bg-green-600 text-white w-full py-2 rounded mt-4 font-semibold text-lg">
+        <button onClick={() => {
+          props.createRide();
+          props.setVehicleFound(true); 
+          props.setConfirmRidePanel(false);
+        }} className="bg-green-600 text-white w-full py-2 rounded mt-4 font-semibold text-lg">
           Confirm
         </button>
       </div>

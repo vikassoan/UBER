@@ -1,41 +1,50 @@
-import React, { useState, useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { UserDataContext } from "../context/UserContext";
+import React, { useState, useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../utils/api';
+import { UserDataContext } from '../context/UserContext';
 
-const UserLogin = () => {
-
+const UserSignup = () => {
   const [firstname, setFirstname] = useState('');
   const [lastname, setLastname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-
   const { user, setUser } = useContext(UserDataContext);
 
   const submitHandler = async (e) => {
     e.preventDefault();
-    const newUser = {
-      fullname: {
-        firstname: firstname,
-        lastname: lastname
-      },
-      email: email,
-      password: password
-    };
-    const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/register`, newUser);
-    if(response.status === 201) {
-      const data = response.data;
-      setUser(data.user);
-      localStorage.setItem("token", data.token);
-      navigate('/home');
-    }
+    setError('');
+    setLoading(true);
 
-    setFirstname('');
-    setLastname('');
-    setEmail('');
-    setPassword('');
+    try {
+      const newUser = {
+        fullname: {
+          firstname: firstname,
+          lastname: lastname
+        },
+        email: email,
+        password: password
+      };
+      const response = await api.post('/users/register', newUser);
+      if(response.status === 201) {
+        const data = response.data;
+        setUser(data.user);
+        localStorage.setItem("token", data.token);
+        navigate('/home');
+      }
+
+      setFirstname('');
+      setLastname('');
+      setEmail('');
+      setPassword('');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -90,11 +99,17 @@ const UserLogin = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
+            </div>
+          )}
           <button
-            className="bg-[#111] text-white font-semibold rounded px-4 py-2 mb-4 w-full text-lg placeholder:text-sm"
+            className="bg-[#111] text-white font-semibold rounded px-4 py-2 mb-4 w-full text-lg placeholder:text-sm disabled:opacity-50"
             type="submit"
+            disabled={loading}
           >
-            Create Account
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
         <p className="text-center">
@@ -113,4 +128,4 @@ const UserLogin = () => {
   );
 };
 
-export default UserLogin;
+export default UserSignup;
