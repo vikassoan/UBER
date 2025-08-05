@@ -1,1 +1,45 @@
 @import "tailwindcss";
+
+/* iOS-like smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for iOS feel */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Ensure proper font rendering */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* iOS-like focus states */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #3b82f6;
+  ring-offset: 2px;
+}
+
+/* Smooth transitions for all interactive elements */
+button, input, select, textarea {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* iOS-like button press effect */
+button:active {
+  transform: scale(0.98);
+}
+
+/* Custom backdrop blur for modals */
+.backdrop-blur-ios {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}

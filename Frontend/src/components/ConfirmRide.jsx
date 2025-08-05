@@ -1,71 +1,92 @@
-import React from "react";
+import React from 'react'
 
-const ConfirmRide = (props) => {
-  // Helper function to safely get string value
-  const getStringValue = (value) => {
-    if (typeof value === 'string') return value;
-    if (value && typeof value === 'object' && value.description) return value.description;
-    return value || '';
+const ConfirmRide = ({ createRide, pickup, destination, fare, vehicleType, setConfirmRidePanel, setVehicleFound, loading }) => {
+  const handleConfirm = async () => {
+    try {
+      await createRide();
+    } catch (error) {
+      console.error('Error confirming ride:', error);
+    }
+  };
+
+  const handleCancel = () => {
+    setConfirmRidePanel(false);
   };
 
   return (
-    <div>
-      <h5
-        onClick={() => {
-          props.setConfirmRidePanel(false)
-        }}
-        className="p-3 text-center absolute top-0 w-[93%]"
-      >
-        <i className="text-xl text-gray-500 ri-arrow-down-wide-line"></i>
-      </h5>
-      <h3 className="text-2xl font-semibold mb-4">Confirm your ride</h3>
-      <div className="flex w-full flex-col items-center justify-between">
-        <img
-          className="h-30 mb-5"
-          src="https://www.uber-assets.com/image/upload/f_auto,q_auto:eco,c_fill,h_538,w_956/v1688398971/assets/29/fbb8b0-75b1-4e2a-8533-3a364e7042fa/original/UberSelect-White.png"
-          alt=""
-        />
-        <div className="w-full flex flex-col items-center border-t-1">
-          <div className="flex w-full items-center border-b-1">
-            <i className="text-2xl font-semibold ri-map-pin-line"></i>
-            <div className="p-4">
-                <h4 className="text-xl font-semibold">
-                    Pickup
-                </h4>
-                <p className="text-sm text-gray-500">{getStringValue(props.pickup)}</p>
-            </div>
+    <div className="bg-white rounded-t-3xl p-6 shadow-2xl">
+      <div className="flex justify-center mb-6">
+        <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+      </div>
+      
+      <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Confirm Your Ride</h3>
+      
+      {/* Ride Details */}
+      <div className="space-y-4 mb-6">
+        <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-2xl">
+          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+            <i className="ri-map-pin-line text-white text-lg"></i>
           </div>
-
-          <div className="flex w-full items-center border-b-1">
-            <i className="text-2xl font-semibold ri-square-line"></i>
-            <div className="p-4">
-                <h4 className="text-xl font-semibold">
-                    Destination
-                </h4>
-                <p className="text-sm text-gray-500">{getStringValue(props.destination)}</p>
-            </div>
-          </div>
-
-          <div className="flex w-full items-center border-b-1">
-            <i className="text-2xl font-semibold ri-bank-card-line"></i>
-            <div className="p-4">
-                <h4 className="text-xl font-semibold">
-                    ₹{props.fare[props.vehicleType] || 0}
-                </h4>
-                <p className="text-sm text-gray-500">Cash</p>
-            </div>
+          <div className="flex-1">
+            <h4 className="text-lg font-semibold text-gray-900">Pickup</h4>
+            <p className="text-sm text-gray-600">{pickup}</p>
           </div>
         </div>
-        <button onClick={() => {
-          props.createRide();
-          props.setVehicleFound(true); 
-          props.setConfirmRidePanel(false);
-        }} className="bg-green-600 text-white w-full py-2 rounded mt-4 font-semibold text-lg">
-          Confirm
+
+        <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-2xl">
+          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+            <i className="ri-square-line text-white text-lg"></i>
+          </div>
+          <div className="flex-1">
+            <h4 className="text-lg font-semibold text-gray-900">Destination</h4>
+            <p className="text-sm text-gray-600">{destination}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-2xl">
+          <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
+            <i className="ri-car-line text-white text-lg"></i>
+          </div>
+          <div className="flex-1">
+            <h4 className="text-lg font-semibold text-gray-900">Vehicle Type</h4>
+            <p className="text-sm text-gray-600 capitalize">{vehicleType}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Fare Details */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-2xl mb-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900">Total Fare</h4>
+            <p className="text-sm text-gray-600">Distance: {fare.distance || 0} km</p>
+          </div>
+          <div className="text-right">
+            <h3 className="text-3xl font-bold text-gray-900">₹{fare.fare || 0}</h3>
+            <p className="text-sm text-gray-600">Estimated</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex space-x-3">
+        <button
+          onClick={handleCancel}
+          className="flex-1 bg-gray-200 text-gray-800 font-semibold py-4 rounded-2xl text-lg hover:bg-gray-300 active:scale-95 transition-all duration-200"
+          disabled={loading}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleConfirm}
+          className="flex-1 bg-black text-white font-semibold py-4 rounded-2xl text-lg hover:bg-gray-800 active:scale-95 transition-all duration-200 disabled:opacity-50"
+          disabled={loading}
+        >
+          {loading ? 'Confirming...' : 'Confirm Ride'}
         </button>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default ConfirmRide;
+export default ConfirmRide

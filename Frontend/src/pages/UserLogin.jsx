@@ -10,8 +10,7 @@ const UserLogin = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { user, setUser } = useContext(UserDataContext);
-
+  const { setUser } = useContext(UserDataContext);
   const navigate = useNavigate();
 
   const submitHandler = async (e) => {
@@ -28,96 +27,113 @@ const UserLogin = () => {
 
     try {
       const userData = {
-        email: email.trim(),
-        password: password
+        email: email.trim().toLowerCase(),
+        password: password,
       };
-
-      const response = await api.post("/users/login", userData);
-      const data = response.data;
       
-      if (data.token && data.user) {
-        setUser(data.user);
-        localStorage.setItem("token", data.token);
+      console.log('Attempting user login:', userData.email);
+      
+      const response = await api.post("/users/login", userData);
+      
+      if (response.status === 200) {
+        const data = response.data;
+        console.log('User login successful:', data.user._id);
         
-        // Clear form
-        setEmail("");
-        setPassword("");
-        
-        // Redirect to home
-        navigate("/home");
-      } else {
-        throw new Error("Invalid response from server");
+        if (data.user && data.token) {
+          setUser(data.user);
+          localStorage.setItem("token", data.token);
+          navigate("/home");
+        } else {
+          throw new Error('Invalid response from server');
+        }
       }
     } catch (err) {
       const errorMessage = err.response?.data?.message || 
-        err.message || 
-        "Login failed. Please check your credentials and try again.";
+        err.response?.data?.errors?.[0]?.msg || 
+        "Login failed. Please check your credentials.";
       setError(errorMessage);
       setPassword(""); // Clear password on error
     } finally {
       setLoading(false);
     }
   };
+
   return (
-    <div className="p-8 h-screen relative">
-      <div className="mb-20">
-        <img
-          className="w-20 mb-7"
-          src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Uber_logo_2018.png"
-          alt=""
-        />
-        <form
-          onSubmit={(e) => {
-            submitHandler(e);
-          }}
-        >
-          <h3 className="text-lg font-medium mb-2">Welcome back</h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Sign in to access your account
-          </p>
-
-          <h3 className="text-lg font-medium mb-2">What's your email?</h3>
-          <input
-            className="bg-[#eeeeee] rounded px-4 py-2 mb-4 w-full text-lg placeholder:text-sm"
-            required
-            type="email"
-            placeholder="email@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <h3 className="text-lg font-medium mb-2">Enter Password</h3>
-          <input
-            className="bg-[#eeeeee] rounded px-4 py-2 mb-4 w-full text-lg placeholder:text-sm"
-            required
-            type="password"
-            placeholder="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i className="ri-user-line text-white text-3xl"></i>
             </div>
-          )}
-          <LoginSwitchButton isUserLogin={true} />
-          <button
-            className="bg-[#111] text-white font-semibold rounded px-4 py-2 mb-4 w-full text-lg placeholder:text-sm disabled:opacity-50"
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-        <p className="text-center">
-          Don't have an account?{" "}
-          <Link to="/user-signup" className="text-blue-600">
-            Sign up here
-          </Link>
-        </p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
+            <p className="text-gray-600">Sign in to access your account</p>
+          </div>
+          
+          {/* Form */}
+          <form onSubmit={submitHandler} className="space-y-6">
+            {/* Email */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Email Address</label>
+              <input
+                className="w-full px-4 py-3 text-lg bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                required
+                type="email"
+                placeholder="email@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            {/* Password */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <input
+                className="w-full px-4 py-3 text-lg bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                required
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl">
+                {error}
+              </div>
+            )}
+            
+            {/* Submit Button */}
+            <button
+              className="w-full bg-black text-white font-semibold py-4 rounded-2xl text-lg hover:bg-gray-800 active:scale-95 transition-all duration-200 disabled:opacity-50"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
+          </form>
+          
+          {/* Signup Link */}
+          <p className="text-center mt-6 text-gray-600">
+            Don't have an account?{" "}
+            <Link to="/user-signup" className="text-blue-600 hover:text-blue-800 font-medium">
+              Sign up here
+            </Link>
+          </p>
+          
+          {/* Switch Button */}
+          <div className="mt-8">
+            <LoginSwitchButton isUserLogin={true} />
+          </div>
+        </div>
       </div>
-      <div>
-        <p className="text-[0.6rem] text-gray-400 text-center">
+      
+      {/* Footer */}
+      <div className="text-center pb-6">
+        <p className="text-xs text-gray-400">
           We respect your privacy — your login info is safe, never shared, and used only to ensure a smooth ride experience.
         </p>
       </div>

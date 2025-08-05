@@ -42,7 +42,14 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/user-login';
+      
+      // Determine redirect path based on current location
+      const currentPath = window.location.pathname;
+      if (currentPath.includes('captain')) {
+        window.location.href = '/captain-login';
+      } else {
+        window.location.href = '/user-login';
+      }
     }
     console.error('API Error:', error.response?.data || error.message);
     return Promise.reject(error);

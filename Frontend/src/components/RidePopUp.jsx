@@ -1,64 +1,116 @@
-import React from "react";
+import React, { useContext } from "react";
+import { SocketContext } from "../context/SocketContext";
+import api from '../utils/api';
 
 const RidePopUp = ({ ride, setRidePopUpPanel, setConfirmRidePopUpPanel }) => {
-  if (!ride) return null;
+  const { socket } = useContext(SocketContext);
+
+  if (!ride) {
+    console.log('No ride data provided to RidePopUp');
+    return null;
+  }
+
+  console.log('RidePopUp received ride:', ride);
+
+  const handleAcceptRide = async () => {
+    try {
+      console.log('Accepting ride:', ride._id);
+      const response = await api.post('/rides/confirm', {
+        rideId: ride._id
+      });
+
+      if (response.status === 200) {
+        console.log('Ride confirmed successfully');
+        setConfirmRidePopUpPanel(true);
+        setRidePopUpPanel(false);
+      }
+    } catch (error) {
+      console.error('Error accepting ride:', error);
+      alert('Failed to accept ride. Please try again.');
+    }
+  };
+
+  const handleIgnoreRide = () => {
+    console.log('Ignoring ride:', ride._id);
+    setRidePopUpPanel(false);
+    socket.emit('ride-rejected', { rideId: ride._id });
+  };
+
+  // Helper function to safely get nested values
+  const getNestedValue = (obj, path, defaultValue = '') => {
+    return path.split('.').reduce((current, key) => {
+      return current && current[key] !== undefined ? current[key] : defaultValue;
+    }, obj);
+  };
+
   return (
-    <div>
-      <h5
-        onClick={() => {
-          props.setRidePopUpPanel(false);
-        }}
-        className="p-3 text-center absolute top-0 w-[93%]"
-      >
-        <i className="text-xl text-gray-500 ri-arrow-down-wide-line"></i>
-      </h5>
-      <h3 className="text-2xl font-semibold mb-4">New Ride Available!</h3>
-      <div className="flex items-center justify-between mb-4 bg-yellow-400 p-4 rounded">
-        <div className="flex items-center justify-start gap-4">
-          <img
-            className="h-12 w-12 rounded-full object-cover"
-            src="https://mir-s3-cdn-cf.behance.net/project_modules/fs/742c8a68394479.5b5b215a1d767.jpg"
-            alt=""
-          />
-          <h4 className="text-lg font-medium">{ride.user.fullname.firstname} {ride.user.fullname.lastname}</h4>
-        </div>
-        <div>
-          <h4 className="text-lg font-semibold">₹{ride.fare.toFixed(2)}</h4>
-          <p className="text-sm font-normal text-gray-600">{ride.distance} km</p>
+    <div className="bg-white rounded-t-3xl p-6 shadow-2xl">
+      <div className="flex justify-center mb-6">
+        <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+      </div>
+      
+      <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">New Ride Available!</h3>
+      
+      {/* User Info Card */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-2xl mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+              <span className="text-white font-semibold text-lg">
+                {getNestedValue(ride, 'user.fullname.firstname', 'U').charAt(0)}
+              </span>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900">
+                {getNestedValue(ride, 'user.fullname.firstname', '')} {getNestedValue(ride, 'user.fullname.lastname', '')}
+              </h4>
+              <p className="text-sm text-gray-600">Passenger</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <h4 className="text-2xl font-bold text-gray-900">₹{(ride.fare || 0).toFixed(2)}</h4>
+            <p className="text-sm text-gray-600">{ride.distance || 0} km</p>
+          </div>
         </div>
       </div>
-      <div className="flex w-full flex-col items-center justify-between">
-        <div className="w-full flex flex-col items-center border-t-1">
-          <div className="flex w-full items-center border-b-1">
-            <i className="text-2xl font-semibold ri-map-pin-line"></i>
-            <div className="p-4">
-              <h4 className="text-xl font-semibold">{ride.pickup}</h4>
-              <p className="text-sm text-gray-500">{ride.pickupAddress}</p>
-            </div>
-          </div>
 
-          <div className="flex w-full items-center border-b-1">
-            <i className="text-2xl font-semibold ri-square-line"></i>
-            <div className="p-4">
-              <h4 className="text-xl font-semibold">{ride.destination}</h4>
-              <p className="text-sm text-gray-500">{ride.destinationAddress}</p>
-            </div>
+      {/* Ride Details */}
+      <div className="space-y-4 mb-6">
+        <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-2xl">
+          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+            <i className="ri-map-pin-line text-white text-lg"></i>
+          </div>
+          <div className="flex-1">
+            <h4 className="text-lg font-semibold text-gray-900">Pickup</h4>
+            <p className="text-sm text-gray-600">{ride.pickup || 'Location not specified'}</p>
           </div>
         </div>
-        <div className="flex w-full items-center justify-between gap-4">
-          <button
-            onClick={() => {setRidePopUpPanel(false);}}
-            className="bg-gray-400 text-gray-800 w-full py-2 rounded mt-4 font-semibold text-lg"
-          >
-            Ignore
-          </button>
-          <button
-            onClick={() => {setConfirmRidePopUpPanel(true);}}
-            className="bg-green-600 text-white w-full py-2 rounded mt-4 font-semibold text-lg"
-          >
-            Accept
-          </button>
+
+        <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-2xl">
+          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+            <i className="ri-square-line text-white text-lg"></i>
+          </div>
+          <div className="flex-1">
+            <h4 className="text-lg font-semibold text-gray-900">Destination</h4>
+            <p className="text-sm text-gray-600">{ride.destination || 'Location not specified'}</p>
+          </div>
         </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex space-x-3">
+        <button
+          onClick={handleIgnoreRide}
+          className="flex-1 bg-gray-200 text-gray-800 font-semibold py-4 rounded-2xl text-lg hover:bg-gray-300 active:scale-95 transition-all duration-200"
+        >
+          Ignore
+        </button>
+        <button
+          onClick={handleAcceptRide}
+          className="flex-1 bg-green-500 text-white font-semibold py-4 rounded-2xl text-lg hover:bg-green-600 active:scale-95 transition-all duration-200"
+        >
+          Accept
+        </button>
       </div>
     </div>
   );

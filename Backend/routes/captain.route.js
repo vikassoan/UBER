@@ -1,39 +1,45 @@
-const captainController = require('../controllers/captain.controller');
 const express = require('express');
-const router = express.Router();
 const { body } = require('express-validator');
+const captainController = require('../controllers/captain.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 
+const router = express.Router();
+
+// Test endpoint to get captain data
+router.get('/test-captain/:id', async (req, res) => {
+    try {
+        const captainModel = require('../models/captain.model');
+        const captain = await captainModel.findById(req.params.id);
+        
+        if (!captain) {
+            return res.status(404).json({ message: 'Captain not found' });
+        }
+        
+        res.json({ captain });
+    } catch (error) {
+        console.error('Test captain error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 router.post('/register', [
-    body('fullname.firstname')
-        .isLength({ min: 3 }).withMessage('First name must be at least 3 characters long'),
-    body('email')
-        .isEmail().withMessage('Please fill a valid email address'),
-    body('password')
-        .isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
-    body('vehicle.color')
-        .isLength({ min: 3 }).withMessage('Color must be at least 3 characters long'),
-    body('vehicle.plate')
-        .matches(/^[A-Z0-9]{1,10}$/).withMessage('Please fill a valid vehicle plate number'),
-    body('vehicle.capacity')
-        .isInt({ min: 1 }).withMessage('Capacity must be at least 1'),
-    body('vehicle.type')
-        .isIn(['car', 'bike', 'auto']).withMessage('Vehicle type must be one of car, bike, or auto')
-],
-    captainController.registerCaptain
-);
+    body('fullname.firstname').notEmpty().withMessage('First name is required'),
+    body('fullname.lastname').notEmpty().withMessage('Last name is required'),
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('vehicle.color').notEmpty().withMessage('Vehicle color is required'),
+    body('vehicle.plate').notEmpty().withMessage('Vehicle plate is required'),
+    body('vehicle.capacity').isInt({ min: 1 }).withMessage('Vehicle capacity must be at least 1'),
+    body('vehicle.type').isIn(['car', 'bike', 'auto']).withMessage('Invalid vehicle type')
+], captainController.registerCaptain);
 
 router.post('/login', [
-    body('email')
-        .isEmail().withMessage('Please fill a valid email address'),
-    body('password')
-        .isLength({ min: 6 }).withMessage('Password must be at least 6 characters long')
-],
-    captainController.loginCaptain
-);
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('password').notEmpty().withMessage('Password is required')
+], captainController.loginCaptain);
 
 router.get('/profile', authMiddleware.authCaptain, captainController.getCaptainProfile);
 
-router.get('/logout', authMiddleware.authCaptain, captainController.logoutCaptain);
+router.post('/logout', authMiddleware.authCaptain, captainController.logoutCaptain);
 
 module.exports = router;

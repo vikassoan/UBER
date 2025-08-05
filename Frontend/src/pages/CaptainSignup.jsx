@@ -1,11 +1,9 @@
 import React, { useState, useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CaptainDataContext } from "../context/CaptainContext";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from '../utils/api';
 
 const CaptainSignup = () => {
-
   const navigate = useNavigate();
   
   const [firstname, setFirstname] = useState("");
@@ -16,156 +14,216 @@ const CaptainSignup = () => {
   const [vehiclePlate, setVehiclePlate] = useState("");
   const [vehicleCapacity, setVehicleCapacity] = useState("");
   const [vehicleType, setVehicleType] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const { captain, setCaptain } = useContext(CaptainDataContext);
+  const { setCaptain } = useContext(CaptainDataContext);
 
   const submitHandler = async (e) => {
     e.preventDefault();
-    const captainData = {
-      fullname: {
-        firstname: firstname,
-        lastname: lastname,
-      },
-      email: email,
-      password: password,
-      vehicle: {
-        color: vehicleColor,
-        plate: vehiclePlate,
-        capacity: vehicleCapacity,
-        type: vehicleType,
-      },
-    };
-
-    const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/captains/register`, captainData);
-
-    if (response.status === 201) {
-      const data = response.data;
-      setCaptain(data.captain);
-      localStorage.setItem("token", data.token);
-      navigate("/captain-home");
+    
+    // Validate required fields
+    if (!firstname || !lastname || !email || !password || !vehicleColor || !vehiclePlate || !vehicleCapacity || !vehicleType) {
+      setError("All fields are required");
+      return;
     }
 
-    setFirstname("");
-    setLastname("");
-    setEmail("");
-    setPassword("");
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    // Validate vehicle plate format
+    const plateRegex = /^[A-Z0-9]{1,10}$/;
+    if (!plateRegex.test(vehiclePlate.toUpperCase())) {
+      setError("Please enter a valid vehicle plate number (1-10 alphanumeric characters)");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const captainData = {
+        fullname: {
+          firstname: firstname.trim(),
+          lastname: lastname.trim(),
+        },
+        email: email.trim().toLowerCase(),
+        password: password,
+        vehicle: {
+          color: vehicleColor.trim(),
+          plate: vehiclePlate.trim().toUpperCase(),
+          capacity: parseInt(vehicleCapacity),
+          type: vehicleType,
+        },
+      };
+
+      const response = await api.post("/captains/register", captainData);
+
+      if (response.status === 201) {
+        const data = response.data;
+        setCaptain(data.captain);
+        localStorage.setItem("token", data.token);
+        navigate("/captain-home");
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || 
+        err.response?.data?.errors?.[0]?.msg || 
+        "Registration failed. Please try again.";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="p-8 pt-4 h-screen flex flex-col justify-between">
-      <div>
-        <img
-          className="w-20"
-          src="https://www.svgrepo.com/show/505031/uber-driver.svg"
-          alt=""
-        />
-        <form
-          onSubmit={(e) => {
-            submitHandler(e);
-          }}
-        >
-          <h3 className="text-lg font-medium mb-2">
-            What's our captain's name?
-          </h3>
-          <div className="flex gap-4 mb-4">
-            <input
-              className="bg-[#eeeeee] rounded px-4 py-2 w-1/2 text-lg placeholder:text-sm"
-              required
-              type="text"
-              placeholder="First name"
-              value={firstname}
-              onChange={(e) => setFirstname(e.target.value)}
-            />
-            <input
-              className="bg-[#eeeeee] rounded px-4 py-2 w-1/2 text-lg placeholder:text-sm"
-              required
-              type="text"
-              placeholder="Last name"
-              value={lastname}
-              onChange={(e) => setLastname(e.target.value)}
-            />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i className="ri-steering-line text-white text-3xl"></i>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Join as a Captain</h1>
+            <p className="text-gray-600">Start earning by connecting with passengers</p>
           </div>
+          
+          {/* Form */}
+          <form onSubmit={submitHandler} className="space-y-6">
+            {/* Personal Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  className="w-full px-4 py-3 text-lg bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  required
+                  type="text"
+                  placeholder="First name"
+                  value={firstname}
+                  onChange={(e) => setFirstname(e.target.value)}
+                />
+                <input
+                  className="w-full px-4 py-3 text-lg bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  required
+                  type="text"
+                  placeholder="Last name"
+                  value={lastname}
+                  onChange={(e) => setLastname(e.target.value)}
+                />
+              </div>
+            </div>
 
-          <h3 className="text-lg font-medium mb-2">
-            What's our captain's email?
-          </h3>
-          <input
-            className="bg-[#eeeeee] rounded px-4 py-2 mb-4 w-full text-lg placeholder:text-sm"
-            required
-            type="email"
-            placeholder="email@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+            {/* Contact Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
+              <input
+                className="w-full px-4 py-3 text-lg bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                required
+                type="email"
+                placeholder="email@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
 
-          <h3 className="text-lg font-medium mb-2">Enter Password</h3>
-          <input
-            className="bg-[#eeeeee] rounded px-4 py-2 mb-4 w-full text-lg placeholder:text-sm"
-            required
-            type="password"
-            placeholder="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+            {/* Security */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Security</h3>
+              <input
+                className="w-full px-4 py-3 text-lg bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                required
+                type="password"
+                placeholder="Create a password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
 
-          <h3 className="text-lg font-medium mb-2">Vehicle Details</h3>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <input
-              className="bg-[#eeeeee] rounded px-4 py-2 w-full text-lg placeholder:text-sm"
-              required
-              type="text"
-              placeholder="Color"
-              value={vehicleColor}
-              onChange={(e) => setVehicleColor(e.target.value)}
-            />
-            <input
-              className="bg-[#eeeeee] rounded px-4 py-2 w-full text-lg placeholder:text-sm"
-              required
-              type="text"
-              placeholder="Plate Number"
-              value={vehiclePlate}
-              onChange={(e) => setVehiclePlate(e.target.value)}
-            />
-            <input
-              className="bg-[#eeeeee] rounded px-4 py-2 w-full text-lg placeholder:text-sm"
-              required
-              type="number"
-              min="1"
-              placeholder="Capacity"
-              value={vehicleCapacity}
-              onChange={(e) => setVehicleCapacity(e.target.value)}
-            />
-            <select
-              className="bg-[#eeeeee] rounded px-4 py-2 w-full text-lg placeholder:text-sm"
-              required
-              value={vehicleType}
-              onChange={(e) => setVehicleType(e.target.value)}
+            {/* Vehicle Details */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Vehicle Details</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  className="w-full px-4 py-3 text-lg bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  required
+                  type="text"
+                  placeholder="Vehicle color"
+                  value={vehicleColor}
+                  onChange={(e) => setVehicleColor(e.target.value)}
+                />
+                <input
+                  className="w-full px-4 py-3 text-lg bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  required
+                  type="text"
+                  placeholder="Plate number"
+                  value={vehiclePlate}
+                  onChange={(e) => setVehiclePlate(e.target.value)}
+                />
+                <input
+                  className="w-full px-4 py-3 text-lg bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  required
+                  type="number"
+                  min="1"
+                  placeholder="Capacity"
+                  value={vehicleCapacity}
+                  onChange={(e) => setVehicleCapacity(e.target.value)}
+                />
+                <select
+                  className="w-full px-4 py-3 text-lg bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  required
+                  value={vehicleType}
+                  onChange={(e) => setVehicleType(e.target.value)}
+                >
+                  <option value="">Vehicle type</option>
+                  <option value="car">Car</option>
+                  <option value="bike">Bike</option>
+                  <option value="auto">Auto</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl">
+                {error}
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button
+              className="w-full bg-black text-white font-semibold py-4 rounded-2xl text-lg hover:bg-gray-800 active:scale-95 transition-all duration-200 disabled:opacity-50"
+              type="submit"
+              disabled={loading}
             >
-              <option value="">Type</option>
-              <option value="car">Car</option>
-              <option value="bike">Bike</option>
-              <option value="auto">Auto</option>
-            </select>
-          </div>
-
-          <button
-            className="bg-[#111] text-white font-semibold rounded px-4 py-2 mb-4 w-full text-lg placeholder:text-sm"
-            type="submit"
-          >
-            Create Captain Account
-          </button>
-        </form>
-        <p className="text-center">
-          Already have a account?{" "}
-          <Link to="/captain-login" className="text-blue-600">
-            Login here
-          </Link>
-        </p>
+              {loading ? 'Creating Account...' : 'Create Captain Account'}
+            </button>
+          </form>
+          
+          {/* Login Link */}
+          <p className="text-center mt-6 text-gray-600">
+            Already have an account?{" "}
+            <Link to="/captain-login" className="text-blue-600 hover:text-blue-800 font-medium">
+              Login here
+            </Link>
+          </p>
+        </div>
       </div>
-      <div>
-        <p className="text-[0.6rem] text-gray-400 text-center">
+      
+      {/* Footer */}
+      <div className="text-center pb-6">
+        <p className="text-xs text-gray-400">
           Sign up as a driver to connect with passengers and start your journey
-          with ease and safety.{" "}
+          with ease and safety.
         </p>
       </div>
     </div>

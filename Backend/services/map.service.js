@@ -87,14 +87,47 @@ module.exports.getSuggestions = async (input) => {
 };
 
 module.exports.getCaptainsInTheRadius = async (lat, lng, radius) => {
-    // radius in km
-    const captains = await captainModel.find({
-        location: {
-            $geoWithin: {
-                $centerSphere: [ [ lng, lat ], radius / 6371 ]
-            }
-        }
-    });
+    console.log(`Looking for captains near lat: ${lat}, lng: ${lng}, radius: ${radius}km`);
+    
+    try {
+        // First try to find captains with location data
+        const captainsWithLocation = await captainModel.find({
+            location: {
+                $geoWithin: {
+                    $centerSphere: [ [ lng, lat ], radius / 6371 ]
+                }
+            },
+            status: 'active' // Only active captains
+        });
 
-    return captains;
+        console.log(`Found ${captainsWithLocation.length} captains with location data`);
+
+        // If no captains found with location, get all active captains as fallback
+        if (captainsWithLocation.length === 0) {
+            console.log('No captains found with location data, getting all active captains as fallback');
+            const allActiveCaptains = await captainModel.find({ 
+                status: 'active',
+                socketId: { $exists: true, $ne: null } // Only captains with socket connection
+            });
+            console.log(`Found ${allActiveCaptains.length} active captains as fallback`);
+            return allActiveCaptains;
+        }
+
+        return captainsWithLocation;
+    } catch (error) {
+        console.error('Error finding captains in radius:', error);
+        
+        // Fallback: get all active captains
+        try {
+            const fallbackCaptains = await captainModel.find({ 
+                status: 'active',
+                socketId: { $exists: true, $ne: null }
+            });
+            console.log(`Fallback: Found ${fallbackCaptains.length} active captains`);
+            return fallbackCaptains;
+        } catch (fallbackError) {
+            console.error('Fallback error:', fallbackError);
+            return [];
+        }
+    }
 };

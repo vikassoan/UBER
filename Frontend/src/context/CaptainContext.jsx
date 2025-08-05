@@ -15,18 +15,24 @@ export const CaptainDataContext = createContext();
 // Provider component
 const CaptainContext = ({ children }) => {
     const [captain, setCaptain] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
     // Example: update captain info
     const updateCaptain = (newCaptain) => {
-        setCaptain(newCaptain);
+        if (newCaptain) {
+            console.log('Updating captain data:', newCaptain);
+            setCaptain(newCaptain);
+        } else {
+            console.log('Clearing captain data');
+            setCaptain(null);
+        }
     };
 
     // Example: clear captain info
     const value = {
         captain,
-        setCaptain,
+        setCaptain: updateCaptain,
         isLoading,
         setIsLoading,
         error,

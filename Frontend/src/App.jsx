@@ -14,13 +14,14 @@ import CaptainHome from './pages/CaptainHome'
 import Riding from './pages/Riding'
 import CaptainRiding from './pages/CaptainRiding'
 
+
+
+
 // Debug environment variable
 // Check if VITE_BASE_URL is defined
-if (import.meta.env.VITE_BASE_URL) {
+
   console.log('VITE_BASE_URL:', import.meta.env.VITE_BASE_URL);
-} else {
-  console.warn('VITE_BASE_URL is not defined in environment variables');
-}
+
 
 function App() {
   return (
@@ -36,10 +37,10 @@ function App() {
       <Route path='/user-signup' element={<UserSignup />} />
       <Route path='/captain-login' element={<Captainlogin />} />
       <Route path='/captain-signup' element={<CaptainSignup />} />
-      <Route path='/home'
+      <Route path='/captain-home'
         element={
           <UserProtectWrapper>
-            <Home />
+            <CaptainHome />
           </UserProtectWrapper>
         }
       />
